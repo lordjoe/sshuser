@@ -22,34 +22,17 @@ import java.util.Properties;
  */
 public class ClusterSession {
     static java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(ClusterSession.class.getName());
+  
 
-    public static String getUser() {
-          return gUser;
+    private static SSHUserData user;
+
+    public static SSHUserData getUser() {
+        return user;
     }
 
-    public static void setUser(String gUser) {
-        ClusterSession.gUser = gUser;
+    public static void setUser(SSHUserData u) {
+       user = u;
     }
-
-    public static byte[] getPrivateKey() {
-        return gPrivateKey;
-    }
-
-    public static void setPrivateKey(byte[] gPrivateKey) {
-        ClusterSession.gPrivateKey = gPrivateKey;
-    }
-
-    public static byte[] getPublicKey() {
-        return gPublicKey;
-    }
-
-    public static void setPublicKey(byte[] gPublicKey) {
-        ClusterSession.gPublicKey = gPublicKey;
-    }
-
-    private static String gUser;
-    private static byte[] gPrivateKey;
-    private static byte[] gPublicKey;
 
 
     private static boolean inUse;
@@ -190,15 +173,10 @@ public class ClusterSession {
 
         //       jsch.setIdentityRepository(new LocalIdentityRepository());
         try {
-            //         my_jsch.addIdentity(ClusterProperties.PRIVATE_KEY1_FILE1, ClusterProperties.PASS_PHRASE1);
-            byte[] privateKey = getPrivateKey();
-            if (privateKey != null) {
-                byte[] passphrase = null;
-                byte[] publicKey = getPublicKey();
-                my_jsch.addIdentity("user", privateKey, publicKey, passphrase);
-            } else {
-                my_jsch.addIdentity(ClusterProperties.PRIVATE_KEY1_FILE1, ClusterProperties.PUBLIC_KEY1_FILE1, null);
-            }
+            SSHUserData user = getUser();
+            String path = user.getPrivateKeyFile().getAbsolutePath();
+            my_jsch.addIdentity(path);
+
         } catch (JSchException e) {
             throw new RuntimeException(e);
 
@@ -211,19 +189,15 @@ public class ClusterSession {
         if (my_ssh != null)
             return my_ssh;
         try {
+            SSHUserData user = getUser();
             my_ssh = new Ssh(
-                    ClusterProperties.IP,
+            ClusterProperties.IP,
                     ClusterProperties.PORT,
-                    ClusterProperties.USER,
-                    ClusterProperties.PRIVATE_KEY1,
-                    ClusterProperties.PASS_PHRASE1
+                    user.userName,
+                    user.privateKeyFile,
+                    user.passphrase
             );
-//            my_ssh = new Ssh(
-//                    ClusterProperties.IP,
-//                    ClusterProperties.PORT,
-//                    ClusterProperties.USER,
-//                    ClusterProperties.PRIVATE_KEY
-//                );
+
             return my_ssh;
         } catch (UnknownHostException e) {
             throw new RuntimeException(e);
@@ -238,7 +212,7 @@ public class ClusterSession {
      * @return
      */
     private Session buildDirectSession() {
-        String finaluser = getUser(); // "zorzan";
+        SSHUserData finaluser = getUser(); // "zorzan";
         String privateKey = "/opt/blastserver/HPC.ppk";
         String endpoint = "10.60.1.4";
         JSch jsch = getJsch();
@@ -247,12 +221,8 @@ public class ClusterSession {
         try {
 
             //Connect to the HPC via the Gateway using the localhost, as the session and portforwarding are active
-            final_session = jsch.getSession(finaluser, endpoint, 22);
-            byte[] key = getPrivateKey();
-            if(key == null)
-                jsch.addIdentity(privateKey);
-            else
-                jsch.addIdentity("user",key,null,null );
+            final_session = jsch.getSession(finaluser.userName, endpoint, 22);
+             jsch.addIdentity(finaluser.privateKeyFile);
 
             final_session.setUserInfo(lui);
             final_session.setConfig("StrictHostKeyChecking", "no");
@@ -272,58 +242,6 @@ public class ClusterSession {
 
     }
 
-    public Session buildFinalSession() {
-
-        if (final_session != null && final_session.isConnected())
-            return final_session;
-        final_session = buildDirectSession();
-        if (final_session != null && final_session.isConnected())
-            return final_session;
-
-
-        try {
-            //        SlurmClusterRunner.logMessage("Building Proxy Connection");
-            String Gateway1 = "78.236.233.71"; // First level target
-            String user1 = "Lewis";
-            String password = "List2019!";
-            // String privateKey = "C:\\Users\\Steve\\.ssh\\HPC.ppk";
-            String privateKey = "/home/Steve/.ssh/HPC.ppk";
-            String endpoint = "10.60.1.4";
-            String finaluser = "zorzan";
-            String command1 = "ls -ltr";
-
-            JSch jsch = getJsch();
-            my_session = jsch.getSession(user1, Gateway1, 42222);
-            my_session.setPassword(password);
-            localUserInfo lui = new localUserInfo();
-            my_session.setUserInfo(lui);
-            my_session.setConfig("StrictHostKeyChecking", "no");
-            my_session.setTimeout(5000);
-            my_session.connect();
-            my_session.openChannel("direct-tcpip");
-            //set port frowarding on the gateway session.
-            //Anything connecting on 127.0.0.1 will be redirected trough the Gateway toward the HPC, port 22
-            int assinged_port = my_session.setPortForwardingL(0, endpoint, 22);
-
-
-            //Connect to the HPC via the Gateway using the localhost, as the session and portforwarding are active
-            final_session = jsch.getSession(finaluser, "127.0.0.1", assinged_port);
-            jsch.addIdentity(privateKey);
-            final_session.setUserInfo(lui);
-            final_session.setConfig("StrictHostKeyChecking", "no");
-            //        SlurmClusterRunner.logMessage("Trying Final Connection");
-            final_session.setTimeout(5000);
-            final_session.connect();
-            //        SlurmClusterRunner.logMessage("Final Connection made");
-
-
-            return final_session;
-        } catch (JSchException e) {
-            //        SlurmClusterRunner.logMessage("Final Connection failed " + e.getMessage());
-            throw new RuntimeException(e);
-
-        }
-    }
 
     class localUserInfo implements UserInfo {
         String passwd;
@@ -355,19 +273,18 @@ public class ClusterSession {
     public Session getSession() {
         if (final_session != null && final_session.isConnected())
             return final_session;
-        final_session = buildFinalSession();
-        if (true)
-            return final_session;
 
         try {
             JSch jsch = getJsch();
-            my_session = jsch.getSession(ClusterProperties.USER, ClusterProperties.IP, ClusterProperties.PORT);
+            SSHUserData user = getUser();
+            my_session = jsch.getSession(user.userName, ClusterProperties.IP, ClusterProperties.PORT);
             Properties config = new Properties();
 
 
             config.setProperty("StrictHostKeyChecking", "no");
             my_session.setConfig(config);
 
+            /**
             ConfigRepository configRepository = jsch.getConfigRepository();
             // /     EasyRepo identityRepository = new EasyRepo(jsch);
             //      session.setIdentityRepository(identityRepository);
@@ -376,6 +293,7 @@ public class ClusterSession {
             hkx = new HostKey(ClusterProperties.IP, HostKey.SSHRSA, ClusterProperties.PRIVATE_KEY.getBytes());
 
             hkr.add(hkx, new MyUserInfo());
+             */
             return my_session;
         } catch (JSchException e) {
             throw new RuntimeException(e);
@@ -677,29 +595,12 @@ public class ClusterSession {
 
     public static void main(String[] args) {
         fixLogging();
+         SSHUserData user = SSHUserData.getRandomUser();
+        setUser(user);
         ClusterSession me = new ClusterSession();
         ChannelSftp sftp = me.getSFTP();
         recursiveFolderDelete(sftp, args[0]);
-        if (true)
-            return;
-        try {
-            String command = BuildBlastFile.buildScript();
-            String filename = "myScript.sh";
-            me.ftpFileCreate(filename, command);
-            me.executeCommand("chmod a+x " + filename);
-
-            //         boolean answer = me.guaranteeDirectory("/mnt/beegfs/home/lewis");
-            //    me.ftpFilePut(args[0], args[1]);
-            //  String out = me.executeCommand("squeue -u lewis");
-            String out = me.executeCommand("salloc  -u lewis");
-            //          SlurmClusterRunner.logMessage(out);
-
-        } catch (Exception e) {
-
-            throw new RuntimeException(e);
-
-        }
-    }
+      }
 
 
 }

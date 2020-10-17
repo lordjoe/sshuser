@@ -9,19 +9,20 @@ package com.lordjoe.ssh;
  * com.lordjoe.ssh.AccountsData
  */
 
-import com.lordjoe.utilities.Encrypt;
-
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.*;
 
 public class SSHUserData {
-
+    public static final Random RND = new Random();
     public static final String DELIMITER = ",";
 
-    public static final String ENCRYPTED_NAME = "/opt/blastserver/EncryptedProperties.txt";
+    public static final String KEYS_DIRECTORY = "/opt/blastserver/keys";
+    public static final String USERS_FILE = "users.txt";
 
     private static Properties accountsTableX = new Properties();
-    private static Map<String, SSHUserData> accountsByEmail = new HashMap<>();
+
     private static Map<String, SSHUserData> accounts = new HashMap<>();
 
     public static String PRIVATE_KEY1_FILE1 = "/home/Steve/.ssh/HPC.ppk";// "private.ppk"; //id_rsa_list.ppk";
@@ -30,25 +31,22 @@ public class SSHUserData {
 
 
 
-    //Get the private key using mail as properties index
+
+    //Get the username to login into the HPC using mail as properties index
     //if the email is unknown return empty string (function containsMail shall be used before getting the key)
-    public static String getPrivateKey(String email){
+    public static SSHUserData getUser(String email){
         guaranteeUsers();
-        if (accounts.containsKey(email)){
-            return accounts.get(email).getClearPrivateKey();
-        }else
-            return ("");
+        return accounts.get(email);
     }
 
     //Get the username to login into the HPC using mail as properties index
     //if the email is unknown return empty string (function containsMail shall be used before getting the key)
     public static String getUserName(String email){
-        guaranteeUsers();
-        if (accounts.containsKey(email)){
-            SSHUserData accountsData = accounts.get(email);
-            return accountsData.userName;
-        }else
-            return ("");
+        SSHUserData user = getUser(  email);
+        if(user != null)
+            return user.userName;
+        else
+            return  "";
     }
 
     //Return true if the email is known
@@ -62,73 +60,13 @@ public class SSHUserData {
 
     protected static void guaranteeUsers() {
         if(accounts.isEmpty())   {
-
-            // saving the properties in file
-            //accountsTable.setProperty("lordjoe2000@gmail.com", PRIVATE_KEY);
-            //System.out.println("Properties has been set in HashTable: " + accountsTable);
-            //saveProperties(accountsTable);
-            //System.out.println("Properties has been saved in: " + accountsTable);
-
-            // loading the saved properties
-            loadEncryptedFile(ENCRYPTED_NAME,accountsTableX,accounts)  ;
-                /*
-                loadProperties(ENCRYPTED_NAME,accountsTableX);
-
-                for (String o : accountsTableX.stringPropertyNames()) {
-                    String email = o;
-                    String value = accountsTableX.getProperty(o);
-                    String[] items = value.split(DELIMITER);
-                    //        AccountsData ac = new AccountsData(email,items[0],Encrypt.encryptString(items[1]));
-                    AccountsData ac = new AccountsData(email,items[0], items[1]);
-                    accounts.put(email,ac);
-                }
-
-                 */
+            File dir = new File(KEYS_DIRECTORY);
+            File users = new File(dir,USERS_FILE);
+            loadUsers(users);
 
         }
     }
 
-    private static void loadEncryptedFile(String file,Properties temp,Map<String, SSHUserData> decrypted) {
-        try {
-            decrypted.clear();
-            loadProperties(file,temp);
-
-            for (String o : temp.stringPropertyNames()) {
-                String name = o;
-                String value = temp.getProperty(o);
-                String[] items = value.split(DELIMITER);
-                //        AccountsData ac = new AccountsData(email,items[0],Encrypt.encryptString(items[1]));
-                SSHUserData ac = new SSHUserData(name,items[0], items[1]);
-                decrypted.put(name,ac);
-                accounts.put(ac.email,ac);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-
-        }
-
-    }
-
-    private static void loadUnEncryptedFile(String file,Properties temp,Map<String, SSHUserData> decrypted) {
-        try {
-            decrypted.clear();
-            loadProperties(file,temp);
-
-            for (String o : temp.stringPropertyNames()) {
-                String name = o;
-                String value = temp.getProperty(o);
-                String[] items = value.split(DELIMITER);
-                String encryptedPublicKey = encryptAsNeeded(items[1]) ;
-                SSHUserData ac = new SSHUserData(name,items[0], encryptedPublicKey);
-                decrypted.put(name,ac);
-                accounts.put(ac.email,ac);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-
-        }
-
-    }
 
 
 
@@ -147,6 +85,14 @@ public class SSHUserData {
 
 
 
+    static void loadProperties(File file,Properties p) throws IOException {
+           FileInputStream fi = new FileInputStream(file);
+        p.load(fi);
+        fi.close();
+        //System.out.println("After Loading properties: " + p);
+    }
+
+
     static void loadProperties(String FileName,Properties p) throws IOException {
         File file=new File(FileName);
         FileInputStream fi = new FileInputStream(file);
@@ -161,11 +107,16 @@ public class SSHUserData {
     public final String privateKeyFile;
     public final String passphrase;
 
-    public SSHUserData(String userName, String email, String encryptedPublicKey) {
+    public SSHUserData(String userName, String email, String privateKeyFile,String publicKeyFile ) {
+        this(userName,   email,   privateKeyFile,  publicKeyFile,null);
+    }
+
+    public SSHUserData(String userName, String email, String privateKeyFile,String publicKeyFile,String passphrase) {
         this.userName = userName;
         this.email = email;
-        publicKey = decryptAsNeeded(encryptedPublicKey);
-        this.encryptedPublicKey = encryptAsNeeded(encryptedPublicKey);;
+        this.publicKeyFile = publicKeyFile;
+        this.privateKeyFile = privateKeyFile;
+        this.passphrase = passphrase;
     }
 
     @Override
@@ -175,18 +126,15 @@ public class SSHUserData {
         SSHUserData that = (SSHUserData) o;
         return Objects.equals(userName, that.userName) &&
                 Objects.equals(email, that.email) &&
-                Objects.equals(encryptedPublicKey, that.encryptedPublicKey);
+                Objects.equals(publicKeyFile, that.publicKeyFile);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(userName, email, encryptedPublicKey);
+        return Objects.hash(userName, email, publicKeyFile);
     }
 
-    public String getClearPrivateKey()
-    {
-        return Encrypt.decryptString(encryptedPublicKey);
-    }
+
 
     public String asTextString()
     {
@@ -208,14 +156,24 @@ public class SSHUserData {
         return sb.toString();
     }
 
-    protected static void loadUsers(String name)
+    public File getPrivateKeyFile()
     {
-        loadUsers(name,accountsTableX,accounts);
+        File dir = new File(KEYS_DIRECTORY);
+        File ret = new File(dir,privateKeyFile);
+        if(!ret.exists())
+            throw new IllegalStateException("Cannot find file private key file " + ret.getAbsolutePath());
+        return ret;
+    }
+
+    protected static void loadUsers(File name)
+    {
+        loadUsers(name, accounts);
 
     }
 
-    protected static void loadUsers(String name,Properties p1,Map<String, SSHUserData> users) {
+    protected static void loadUsers(File name,Map<String, SSHUserData> users) {
         try {
+            Properties p1 = new Properties();
             // saving the properties in file
             //accountsTable.setProperty("lordjoe2000@gmail.com", PRIVATE_KEY);
             //System.out.println("Properties has been set in HashTable: " + accountsTable);
@@ -229,9 +187,12 @@ public class SSHUserData {
                 String email = o;
                 String value = p1.getProperty(o);
                 String[] items = value.split(DELIMITER);
-                SSHUserData ac = new SSHUserData(email,items[0],items[1]);
-                //      AccountsData ac = new AccountsData(email,items[0], items[1]);
-                users.put(email,ac);
+                SSHUserData ac;
+                if(items.length == 4)
+                    ac=  new SSHUserData(items[0],email,items[1],items[2],items[3]);
+                else
+                    ac=  new SSHUserData( items[0],email,items[1],items[2]);
+                  users.put(email,ac);
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -240,7 +201,17 @@ public class SSHUserData {
 
     }
 
+    public String toString() {
+        return userName;
+    }
 
+    public static SSHUserData getRandomUser()
+    {
+        String[] allUsersMails = SSHUserData.getAllUsersMails();
+        String email = allUsersMails[RND.nextInt(allUsersMails.length)];
+        SSHUserData user = SSHUserData.getUser(email);
+        return user;
+    }
 
     public static void usage(String[] args)  {
         System.out.println("usage <filename> create open file from encrypted at /opt/blastserver ");
@@ -253,11 +224,15 @@ public class SSHUserData {
 
         System.out.println("Working Directory = " + System.getProperty("user.dir"));
 
+        guaranteeUsers();
+        String[] allUsersMails = getAllUsersMails();
+        for (int i = 0; i < allUsersMails.length; i++) {
+            String allUsersMail = allUsersMails[i];
+            SSHUserData user = getUser(allUsersMail);
+            System.out.println(user.asTextString());
+        }
 
-        System.out.println("Steven username is "+getUserName("lordjoe2000@gmail.com"));
-        System.out.println("Steven Private key is "+getPrivateKey("lordjoe2000@gmail.com"));
-        System.out.println("Simone username is "+getUserName("simone.zorzan@list.lu"));
-        System.out.println("Simone Private key is "+getPrivateKey("simone.zorzan@list.lu"));
+
     }
 
 }
