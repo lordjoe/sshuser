@@ -25,9 +25,6 @@ public class SSHUserData {
 
     private static Map<String, SSHUserData> accounts = new HashMap<>();
 
-    public static String PRIVATE_KEY1_FILE1 = "/home/Steve/.ssh/HPC.ppk";// "private.ppk"; //id_rsa_list.ppk";
-    public static final String PUBLIC_KEY1_FILE1 = "/home/Steve/.ssh/HPC.pub";// "public.pub";
-
 
 
 

@@ -55,8 +55,7 @@ public class ClusterSession {
     }
 
     private JSch my_jsch;
-    private Session my_session;
-    private Session final_session;
+     private Session my_session;
     private Ssh my_ssh;
     private ChannelSftp cftp;
     private Shell my_shell;
@@ -221,14 +220,14 @@ public class ClusterSession {
         try {
 
             //Connect to the HPC via the Gateway using the localhost, as the session and portforwarding are active
-            final_session = jsch.getSession(finaluser.userName, endpoint, 22);
+            my_session = jsch.getSession(finaluser.userName, endpoint, 22);
              jsch.addIdentity(finaluser.privateKeyFile);
 
-            final_session.setUserInfo(lui);
-            final_session.setConfig("StrictHostKeyChecking", "no");
-            final_session.setTimeout(2000);
-            final_session.connect();
-            return final_session;
+            my_session.setUserInfo(lui);
+            my_session.setConfig("StrictHostKeyChecking", "no");
+            my_session.setTimeout(2000);
+            my_session.connect();
+            return my_session;
         } catch (JSchException e) {
             try {
                 //          SlurmClusterRunner.logMessage("Direct Connect failed");
@@ -271,8 +270,8 @@ public class ClusterSession {
     }
 
     public Session getSession() {
-        if (final_session != null && final_session.isConnected())
-            return final_session;
+        if (my_session != null && my_session.isConnected())
+            return my_session;
 
         try {
             JSch jsch = getJsch();
@@ -394,9 +393,9 @@ public class ClusterSession {
      * @return stdout returned by that command
      * @throws IOException
      */
-    public void ftpFileCreate(String filename, String text) throws IOException {
+    public void ftpFileCreate(String filename, String text,int permissions) throws IOException {
         InputStream is = new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8));
-        ftpFileCreate(filename, is);
+        ftpFileCreate(filename, is,permissions);
     }
 
     /**
@@ -404,7 +403,7 @@ public class ClusterSession {
      * @return stdout returned by that command
      * @throws IOException
      */
-    public void ftpFileCreate(String filename, InputStream is) throws IOException {
+    public void ftpFileCreate(String filename, InputStream is,int permissions) throws IOException {
 
         try {
             ChannelSftp c = getSFTP();
@@ -415,6 +414,8 @@ public class ClusterSession {
             //    SftpProgressMonitor monitor=new MyProgressMonitor();
             int mode = ChannelSftp.OVERWRITE;
             c.put(is, filename, mode);
+            if(permissions != 0)
+                c.chmod(permissions,filename);
         } catch (SftpException e) {
             throw new RuntimeException(e);
 
@@ -595,11 +596,14 @@ public class ClusterSession {
 
     public static void main(String[] args) {
         fixLogging();
-         SSHUserData user = SSHUserData.getRandomUser();
-        setUser(user);
-        ClusterSession me = new ClusterSession();
-        ChannelSftp sftp = me.getSFTP();
-        recursiveFolderDelete(sftp, args[0]);
+        for (int i = 0; i < 5; i++) {
+            SSHUserData user = SSHUserData.getRandomUser();
+            setUser(user);
+            ClusterSession me = new ClusterSession();
+            ChannelSftp sftp = me.getSFTP();
+            ClusterSession.releaseClusterSession(me);
+        }
+
       }
 
 

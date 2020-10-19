@@ -5,16 +5,24 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.lordjoe</groupId>
-    <artifactId>SSHUser</artifactId>    
+    <artifactId>SSHUser</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>SSHUser</name>
-    <description>Make COnnections</description>
+    <description>Make Connections</description>
 
     <dependencies>
-    <!-- https://mvnrepository.com/artifact/com.jcabi/jcabi-log -->
-         <!-- https://mvnrepository.com/artifact/org.eclipse.jetty/jetty-util -->
+        <!-- https://mvnrepository.com/artifact/com.jcabi/jcabi-log -->
+        <!-- https://mvnrepository.com/artifact/org.eclipse.jetty/jetty-util -->
+
+
+        <!-- sxsh user project -->
+        <dependency>
+            <groupId>com.lordjoe</groupId>
+            <artifactId>SSHUser</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
 
         <!-- https://mvnrepository.com/artifact/com.jcabi/jcabi-ssh -->
         <dependency>
@@ -22,7 +30,12 @@
             <artifactId>jcabi-ssh</artifactId>
             <version>1.6</version>
         </dependency>
-
+        <!-- https://mvnrepository.com/artifact/com.jcabi/jcabi-log -->
+        <dependency>
+            <groupId>com.jcabi</groupId>
+            <artifactId>jcabi-log</artifactId>
+            <version>0.18.1</version>
+        </dependency>
 
         <!--  these two needed to keel SL4j happy-->
         <dependency>
@@ -35,14 +48,14 @@
             <artifactId>slf4j-log4j12</artifactId>
             <version>1.7.5</version>
         </dependency>
-         <!-- https://mvnrepository.com/artifact/junit/junit -->
+        <!-- https://mvnrepository.com/artifact/junit/junit -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>4.13</version>
             <scope>test</scope>
         </dependency>
-      </dependencies>
+    </dependencies>
     <build>
         <sourceDirectory>src/main/java</sourceDirectory>
         <plugins>
@@ -67,4 +80,4 @@
             </plugin>
         </plugins>
     </build>
- </project>
+</project>
