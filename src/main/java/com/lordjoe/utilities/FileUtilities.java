@@ -2,20 +2,22 @@
 // make a ms Security manager call
 // import com.ms.security.*;
 
-/**{ file
- @name FileUtilities.java
- @function FileUtilities offer a number of services relating to files including
- file dialog, directory enumerators and keeping track of open files
- @author> Steven M. Lewis
- @copyright>
-  ************************
-  *  Copyright (c) 1996,97,98
-  *  Steven M. Lewis
-  *  www.LordJoe.com
- ************************
- @date> Mon Jun 22 21:48:27 PDT 1998
- @version> 1.0
- }*/
+/**
+ * { file
+ *
+ * @name FileUtilities.java
+ * @function FileUtilities offer a number of services relating to files including
+ * file dialog, directory enumerators and keeping track of open files
+ * @author> Steven M. Lewis
+ * @copyright> ***********************
+ * Copyright (c) 1996,97,98
+ * Steven M. Lewis
+ * www.LordJoe.com
+ * ***********************
+ * @date> Mon Jun 22 21:48:27 PDT 1998
+ * @version> 1.0
+ * }
+ */
 package com.lordjoe.utilities;
 
 
@@ -25,6 +27,11 @@ import javax.swing.*;
 import java.awt.*;
 import java.io.*;
 import java.net.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.PosixFileAttributes;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -86,8 +93,7 @@ public abstract class FileUtilities {
             return bytes;
 
 
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
 
         }
@@ -116,12 +122,10 @@ public abstract class FileUtilities {
             while ((count = buffer.read(data, 0, BUFFER)) != -1) {
                 byteOut.write(data, 0, count);
             }
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
 
-        }
-        finally {
+        } finally {
             guaranteeClosed(buffer);
             guaranteeClosed(byteOut);
         }
@@ -138,12 +142,69 @@ public abstract class FileUtilities {
             return;
         try {
             is.close();
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
 
         }
     }
+
+    public static void setDirectoryPermissions(File f) {
+
+        try {
+            if(!f.exists())
+                throw new IllegalStateException("File " + f.getAbsolutePath() + " does not exist");
+            Path path =  f.toPath();
+            Set<PosixFilePermission> perms = Files.readAttributes(path, PosixFileAttributes.class).permissions();
+
+            System.out.format("Permissions before: %s%n", PosixFilePermissions.toString(perms));
+
+            perms.add(PosixFilePermission.OWNER_WRITE);
+            perms.add(PosixFilePermission.OWNER_READ);
+            perms.add(PosixFilePermission.GROUP_WRITE);
+            perms.add(PosixFilePermission.GROUP_READ);
+            perms.add(PosixFilePermission.OTHERS_WRITE);
+            perms.add(PosixFilePermission.OTHERS_READ);
+            perms.add(PosixFilePermission.OWNER_EXECUTE);
+            perms.add(PosixFilePermission.GROUP_EXECUTE);
+            perms.add(PosixFilePermission.OTHERS_EXECUTE);
+
+            Files.setPosixFilePermissions(path, perms);
+            perms = Files.readAttributes(path, PosixFileAttributes.class).permissions();
+
+            System.out.format("Permissions before: %s%n", PosixFilePermissions.toString(perms));
+
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+
+        }
+    }
+
+    public static void setReadWritePermissions(File f) {
+
+        try {
+            if(!f.exists())
+                throw new IllegalStateException("File " + f.getAbsolutePath() + " does not exist");
+            Path path =  f.toPath();
+            Set<PosixFilePermission> perms = Files.readAttributes(path, PosixFileAttributes.class).permissions();
+
+            System.out.format("Permissions before: %s%n", PosixFilePermissions.toString(perms));
+
+            perms.add(PosixFilePermission.OWNER_WRITE);
+            perms.add(PosixFilePermission.OWNER_READ);
+            perms.add(PosixFilePermission.GROUP_WRITE);
+            perms.add(PosixFilePermission.GROUP_READ);
+            perms.add(PosixFilePermission.OTHERS_WRITE);
+            perms.add(PosixFilePermission.OTHERS_READ);
+             Files.setPosixFilePermissions(path, perms);
+
+            perms = Files.readAttributes(path, PosixFileAttributes.class).permissions();
+            System.out.format("Permissions before: %s%n", PosixFilePermissions.toString(perms));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+
+        }
+    }
+
 
     /**
      * guarantee an input stream is closed - deal with all exceptions
@@ -155,8 +216,7 @@ public abstract class FileUtilities {
             return;
         try {
             is.close();
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
 
         }
@@ -172,8 +232,7 @@ public abstract class FileUtilities {
             return;
         try {
             is.close();
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
 
         }
@@ -206,8 +265,7 @@ public abstract class FileUtilities {
             // Calculate the digest for the given file.
             FileInputStream is = new FileInputStream(theFile);
             return buildMD5Digest(is);
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
 
         }
@@ -232,16 +290,13 @@ public abstract class FileUtilities {
             byte[] thedigest = md.digest();
 
             return thedigest;
-        }
-        catch (NoSuchAlgorithmException e) {
+        } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
 
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
 
-        }
-        finally {
+        } finally {
             guaranteeClosed(in);
         }
     }
@@ -258,8 +313,7 @@ public abstract class FileUtilities {
             byte[] thedigest = md.digest(pIs);
 
             return thedigest;
-        }
-        catch (NoSuchAlgorithmException e) {
+        } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
 
         }
@@ -443,22 +497,18 @@ public abstract class FileUtilities {
             Properties ret = new Properties();
             ret.load(fs);
             return ret;
-        }
-        catch (RuntimeException ex) // tempdt Why do we need this catch block?  It also is doing a poor job and not using a logger.
+        } catch (RuntimeException ex) // tempdt Why do we need this catch block?  It also is doing a poor job and not using a logger.
         {
             // ex.printStackTrace();
             throw ex;
-        }
-        catch (IOException ex) // tempdt This really isn't an IllegalArgumentException.  Dave thinks this should be fixed.  Dave can explain if desired.
+        } catch (IOException ex) // tempdt This really isn't an IllegalArgumentException.  Dave thinks this should be fixed.  Dave can explain if desired.
         {
             throw new IllegalArgumentException("Cannot load properties from " + propName);
-        }
-        finally {
+        } finally {
             try {
                 if (fs != null)
                     fs.close();
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
 
             }
         }
@@ -479,13 +529,11 @@ public abstract class FileUtilities {
         try {
             FileOutputStream fs = new FileOutputStream(propName);
             props.store(fs, null);
-        }
-        catch (RuntimeException ex) // tempdt Why do we need this catch block?  It also is doing a poor job and not using a logger.
+        } catch (RuntimeException ex) // tempdt Why do we need this catch block?  It also is doing a poor job and not using a logger.
         {
             // ex.printStackTrace();
             throw ex;
-        }
-        catch (IOException ex) // tempdt This really isn't an IllegalArgumentException.  Dave thinks this should be fixed.  Dave can explain if desired.
+        } catch (IOException ex) // tempdt This really isn't an IllegalArgumentException.  Dave thinks this should be fixed.  Dave can explain if desired.
         {
             throw new IllegalArgumentException("Cannot save properties to " + propName);
         }
@@ -551,12 +599,10 @@ public abstract class FileUtilities {
             out = null;
             safeRenameFromTmp(in, tmp);  // now rename the tmp file as the original
 
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
 
-        }
-        finally {
+        } finally {
             if (out != null) {
                 out.close();
             }
@@ -663,13 +709,11 @@ public abstract class FileUtilities {
         File parentFile = absFile.getParentFile();
         if (parentFile.exists() && parentFile.isDirectory()) {
             absFile.mkdir();
-        }
-        else if (parentFile.exists() && !parentFile.isDirectory()) {
+        } else if (parentFile.exists() && !parentFile.isDirectory()) {
             throw new IOException(
                     "File with name " + parentFile.getAbsolutePath() + " already exists " +
                             "specify a different name for directory.");
-        }
-        else {
+        } else {
             createDirectores(parentFile.getAbsolutePath());
             absFile.mkdir();
         }
@@ -738,8 +782,7 @@ public abstract class FileUtilities {
         URI uri = f.toURI();
         try {
             return uri.toURL();
-        }
-        catch (MalformedURLException e) {
+        } catch (MalformedURLException e) {
             throw new RuntimeException(e);
         }
     }
@@ -816,8 +859,7 @@ public abstract class FileUtilities {
             File Test = new File(TheDir, items[i]);
             if (Test.isFile()) {
                 Test.delete();
-            }
-            else {
+            } else {
                 expungeDirectory(Test);
             }
         }
@@ -850,8 +892,7 @@ public abstract class FileUtilities {
                     out[i] = TestString;
             }
             return (out);
-        }
-        else {
+        } else {
             return (new String[0]);
         }
     }
@@ -932,8 +973,7 @@ public abstract class FileUtilities {
     public static String[] readNLines(File f, int maxLines) throws RuntimeException {
         try {
             return readNLines(new FileInputStream(f), maxLines);
-        }
-        catch (FileNotFoundException e) {
+        } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
 
         }
@@ -962,16 +1002,13 @@ public abstract class FileUtilities {
             String[] ret = new String[holder.size()];
             holder.toArray(ret);
             return ret;
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
 
-        }
-        finally {
+        } finally {
             try {
                 f.close();
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                 // ignore issues
 
             }
@@ -1003,8 +1040,7 @@ public abstract class FileUtilities {
             File test = new File(name);
             if (ret == null) {
                 ret = test;
-            }
-            else {
+            } else {
                 boolean testExists = test.exists();
                 boolean retExists = ret.exists();
 
@@ -1031,8 +1067,7 @@ public abstract class FileUtilities {
     public static String[] getAllFilesWithExtension(String DirectoryName, String Extension) {
         if (Extension == null || Extension.length() == 0) {
             return (getAllFilesWithFilter(DirectoryName, null));
-        }
-        else {
+        } else {
             FilenameFilter TheFilter = (FilenameFilter) (new HasExtensionFilter(Extension));
             return (getAllFilesWithFilter(DirectoryName, TheFilter));
         }
@@ -1056,8 +1091,7 @@ public abstract class FileUtilities {
         if (Extension != null && Extension.length() > 0) {
             FilenameFilter TheFilter = (FilenameFilter) (new HasExtensionFilter(Extension));
             return (getAllFilesWithFilter(Directory, TheFilter));
-        }
-        else {
+        } else {
             return (getAllFilesWithFilter(Directory, null));
         }
     }
@@ -1328,8 +1362,7 @@ public abstract class FileUtilities {
         if (Extension != null) {
             FilenameFilter TheFilter = (FilenameFilter) (new EndsWithFilter(Extension));
             return (getFilesWithFilter(DirectoryName, TheFilter));
-        }
-        else {
+        } else {
             return (getFilesWithFilter(DirectoryName, null));
         }
     }
@@ -1352,8 +1385,7 @@ public abstract class FileUtilities {
         if (Extension != null) {
             FilenameFilter TheFilter = (FilenameFilter) (new EndsWithFilter(Extension));
             return (getFilesWithFilter(dir, dir.getName(), TheFilter));
-        }
-        else {
+        } else {
             return (getFilesWithFilter(dir, dir.getName(), null));
         }
     }
@@ -1377,8 +1409,7 @@ public abstract class FileUtilities {
             FilenameFilter TheFilter = (FilenameFilter) (new DirectoryNamedFilter(
                     SubDirectoryName));
             return (getFilesWithFilter(DirectoryName, TheFilter));
-        }
-        else {
+        } else {
             return (getFilesWithFilter(DirectoryName, null));
         }
     }
@@ -1432,8 +1463,7 @@ public abstract class FileUtilities {
         }
         if (Filter == null) {
             Files = TestFile.list();
-        }
-        else {
+        } else {
             Files = TestFile.list(Filter);
         }
         for (int j = 0; j < Files.length; j++) {
@@ -1443,8 +1473,7 @@ public abstract class FileUtilities {
                 for (int k = 0; k < SubFiles.length; k++) {
                     ret.addElement(SubFiles[k]);
                 }
-            }
-            else {
+            } else {
                 String path = null;
                 /*    try {
                     path = Subfile.getCanonicalPath();
@@ -1541,8 +1570,7 @@ public abstract class FileUtilities {
         }
         if (Filter == null) {
             Files = pTestFile.list();
-        }
-        else {
+        } else {
             Files = pTestFile.list(Filter);
         }
         for (int j = 0; j < Files.length; j++) {
@@ -1807,8 +1835,7 @@ public abstract class FileUtilities {
                     holder.add(sb.toString());
                     sb.setLength(0);
                 }
-            }
-            else {
+            } else {
                 if (sb.length() > 0)
                     sb.append("\n");
                 sb.append(items[i]);
@@ -1863,16 +1890,13 @@ public abstract class FileUtilities {
                 Lines = nonEmptyStrings(Lines);
                 return (Lines);
             }
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
 
-        }
-        finally {
+        } finally {
             if (is != null) {
                 try {
                     is.close();
-                }
-                catch (IOException e) {
+                } catch (IOException e) {
                     // ignore
                 }
             }
@@ -1943,11 +1967,9 @@ public abstract class FileUtilities {
             String[] ret = Util.collectionToStringArray(holder);
             TheFile.close();
             return (ret);
-        }
-        catch (IOException ex) {
+        } catch (IOException ex) {
             throw new IllegalStateException(ex.getMessage());
-        }
-        finally {
+        } finally {
             FileUtilities.guaranteeClosed(r);
 
         }
@@ -2033,13 +2055,11 @@ public abstract class FileUtilities {
             FileInputStream TheFile = new FileInputStream(TestFile);
             // choose large chunks
             return (readInFile(TheFile, len, 4096).toString());
-        }
-        catch (SecurityException e) {
+        } catch (SecurityException e) {
             System.out.println(
                     "Security Exception reading File - " + TestFile.getPath().replace('\\', '/'));
             return (null);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             return (null);
         }
     }
@@ -2101,8 +2121,7 @@ public abstract class FileUtilities {
                 // ought to look at non-printing chars
             }
             TheStream.close();
-        }
-        catch (IOException ex) {
+        } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
         return (s);
@@ -2124,8 +2143,7 @@ public abstract class FileUtilities {
         try {
             is = TheFile.openStream();
             return readInFile(is);
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             return null;
         }
     }
@@ -2169,16 +2187,13 @@ public abstract class FileUtilities {
                 NRead = TheStream.read(buffer, 0, chunk);
                 // ought to look at non-printing chars
             }
-        }
-        catch (IOException ex) {
+        } catch (IOException ex) {
             throw new RuntimeException(ex);
-        }
-        finally {
+        } finally {
             if (TheStream != null) {
                 try {
                     TheStream.close();
-                }
-                catch (IOException e) {
+                } catch (IOException e) {
                     // forgive I guess
                 }
             }
@@ -2233,11 +2248,9 @@ public abstract class FileUtilities {
             Image TheActualImage = Toolkit.getDefaultToolkit().createImage(baos.toByteArray());
             Icon TheImage = new ImageIcon(TheActualImage);
             return (TheImage);
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             return (null);
-        }
-        catch (Exception ex) {
+        } catch (Exception ex) {
             //  return(SecurityUtilities.secureGetResourceIcon(target,name) );
             return (null);
         }
@@ -2262,8 +2275,7 @@ public abstract class FileUtilities {
                 out.println(lines[i]);
             out.close();
             return (true);
-        }
-        catch (IOException ex) {
+        } catch (IOException ex) {
             return (false);
         }
     }
@@ -2281,8 +2293,7 @@ public abstract class FileUtilities {
         int ret = 0;
         try {
             ret = TheStream.read();
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             ret = -1;
         }
         return (ret);
@@ -2423,8 +2434,7 @@ public abstract class FileUtilities {
         char lastchar = s1.charAt(s1.length() - 1);
         if (lastchar == File.separatorChar || lastchar == '/') {
             return (s1 + s2);
-        }
-        else {
+        } else {
             return (s1 + "/" + s2);
         }
     }
@@ -2510,11 +2520,9 @@ public abstract class FileUtilities {
         try {
             file = new FileOutputStream(name);
             return new PrintWriter(new BufferedOutputStream(file));
-        }
-        catch (SecurityException ee) {
+        } catch (SecurityException ee) {
             return (null);
-        }
-        catch (IOException ee) {
+        } catch (IOException ee) {
             return (null);
         }
     }
@@ -2535,11 +2543,9 @@ public abstract class FileUtilities {
         try {
             file = new FileOutputStream(name);
             return new PrintWriter(new BufferedOutputStream(file));
-        }
-        catch (SecurityException ee) {
+        } catch (SecurityException ee) {
             return (null);
-        }
-        catch (IOException ee) {
+        } catch (IOException ee) {
             return (null);
         }
     }
@@ -2558,11 +2564,9 @@ public abstract class FileUtilities {
         try {
             file = new FileOutputStream(name, true);
             return new PrintWriter(new BufferedOutputStream(file));
-        }
-        catch (SecurityException ee) {
+        } catch (SecurityException ee) {
             return (null);
-        }
-        catch (IOException ee) {
+        } catch (IOException ee) {
             return (null);
         }
     }
@@ -2581,8 +2585,7 @@ public abstract class FileUtilities {
         FileOutputStream file = null;
         try {
             file = new FileOutputStream(name);
-        }
-        catch (Exception ee) {
+        } catch (Exception ee) {
             return (null);
         }
         return new PrintStream(new BufferedOutputStream(file));
@@ -2608,8 +2611,7 @@ public abstract class FileUtilities {
             }
             return (false);
             // failure
-        }
-        catch (SecurityException ex) {
+        } catch (SecurityException ex) {
             return (false); // browser disallows
         }
     }
@@ -2637,11 +2639,9 @@ public abstract class FileUtilities {
             }
             return (false);
             // failure
-        }
-        catch (SecurityException ex) {
+        } catch (SecurityException ex) {
             return (false); // browser disallows
-        }
-        finally {
+        } finally {
             if (out != null) {
                 out.close();
             }
@@ -2669,11 +2669,9 @@ public abstract class FileUtilities {
             }
             return (false);
             // failure
-        }
-        catch (SecurityException ex) {
+        } catch (SecurityException ex) {
             return (false); // browser disallows
-        }
-        finally {
+        } finally {
             if (out != null)
                 out.close();
         }
@@ -2700,8 +2698,7 @@ public abstract class FileUtilities {
             }
             return (false);
             // failure
-        }
-        catch (SecurityException ex) {
+        } catch (SecurityException ex) {
             return (false); // browser disallows
         }
     }
@@ -2727,8 +2724,7 @@ public abstract class FileUtilities {
             }
             return (false);
             // failure
-        }
-        catch (SecurityException ex) {
+        } catch (SecurityException ex) {
             return (false); // browser disallows
         }
     }
@@ -2768,8 +2764,7 @@ public abstract class FileUtilities {
             }
             return (false);
             // failure
-        }
-        catch (SecurityException ex) {
+        } catch (SecurityException ex) {
             return (false); // browser disallows
         }
     }
@@ -2865,8 +2860,7 @@ public abstract class FileUtilities {
             srcFile.close();
             dstFile.close();
             return true;
-        }
-        catch (IOException ex) {
+        } catch (IOException ex) {
             return (false);
         }
     }
@@ -2893,8 +2887,7 @@ public abstract class FileUtilities {
         try {
             InputStream str = new FileInputStream(f);
             return getNumberLines(str);
-        }
-        catch (FileNotFoundException e) {
+        } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
 
         }
@@ -2917,17 +2910,14 @@ public abstract class FileUtilities {
                 line = rdr.readLine();
             }
             return ret;
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
 
-        }
-        finally {
+        } finally {
             if (rdr != null) {
                 try {
                     rdr.close();
-                }
-                catch (IOException e) {
+                } catch (IOException e) {
                     throw new RuntimeException(e);
 
                 }
@@ -2992,8 +2982,7 @@ public abstract class FileUtilities {
             long srcDate = src.lastModified();
             dst.setLastModified(srcDate);
             return true;
-        }
-        catch (IOException ex) {
+        } catch (IOException ex) {
             return (false);
         }
     }
@@ -3042,8 +3031,7 @@ public abstract class FileUtilities {
                 if (filesToCopy[i].isDirectory()) {
                     newDirectory = new File(copyToDir + slash + filesToCopy[i].getName());
                     recursiveCopy(filesToCopy[i], newDirectory, overwrite);
-                }
-                else {
+                } else {
                     newFile = new File(copyToDir.toString() + slash + filesToCopy[i].getName());
                     //Just copy the file to its new home.
                     //If overwrite copy the file,
@@ -3055,8 +3043,7 @@ public abstract class FileUtilities {
                     }//if
                 }//else
             }//for
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }//catch
     }//recursiveCopy()
@@ -3182,16 +3169,14 @@ public abstract class FileUtilities {
                     try {
                         ret = realNewFile.delete();
                         realNewFile = new File(newFileName);
-                    }
-                    catch (Exception ex) {
+                    } catch (Exception ex) {
                         // Assertion.doNada();
                     }
                 }
             }
             ret = realOldFile.renameTo(realNewFile);
             return (ret);
-        }
-        catch (Exception ex) {
+        } catch (Exception ex) {
             return (false);
         }
     }
@@ -3235,8 +3220,7 @@ public abstract class FileUtilities {
             Test = "." + ext;
         if (osIsCaseSensitive()) {
             return (TheFile.getName().endsWith(Test));
-        }
-        else {
+        } else {
             String TestName = TheFile.getName().toLowerCase();
             return Boolean.valueOf(TestName.endsWith(Test.toLowerCase()));
         }
@@ -3294,8 +3278,7 @@ public abstract class FileUtilities {
         try {
             FileOutputStream outFile = new FileOutputStream(in);
             return (new PrintStream(outFile));
-        }
-        catch (IOException ex) {
+        } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
     }
@@ -3343,8 +3326,7 @@ public abstract class FileUtilities {
                     col = 0;
                 }
             }
-        }
-        finally {
+        } finally {
             System.out.println();
             in.close();
             out.close();
@@ -3370,8 +3352,7 @@ public abstract class FileUtilities {
                     col = 0;
                 }
             }
-        }
-        finally {
+        } finally {
             //    System.out.println();
             in.close();
             out.close();
@@ -3421,8 +3402,7 @@ public abstract class FileUtilities {
             File test = new File(TestFile, Files[i]);
             if (!test.isDirectory()) {
                 ret = Math.max(ret, test.lastModified());
-            }
-            else {
+            } else {
                 if (recurse)
                     ret = Math.max(ret, getMostRecentFileDate(Files[i], recurse));
             }
@@ -3519,8 +3499,7 @@ public abstract class FileUtilities {
             if (!test.isDirectory()) {
                 if (test.lastModified() > date)
                     holder.addElement(test);
-            }
-            else {
+            } else {
                 if (recurse) {
                     accumulateFilesAfterDate(test, date, recurse, holder);
                 }
@@ -3627,8 +3606,7 @@ public abstract class FileUtilities {
             ObjectOutputStream out = new ObjectOutputStream(fout);
             out.writeObject(in);
             out.close();
-        }
-        catch (IOException ex) {
+        } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
 
@@ -3649,11 +3627,9 @@ public abstract class FileUtilities {
             Object ret = in.readObject();
             in.close();
             return (ret);
-        }
-        catch (ClassNotFoundException ex) {
+        } catch (ClassNotFoundException ex) {
             throw new RuntimeException(ex);
-        }
-        catch (IOException ex) {
+        } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
 
@@ -3674,8 +3650,7 @@ public abstract class FileUtilities {
             ObjectOutputStream out = new ObjectOutputStream(fout);
             out.writeObject(in);
             out.close();
-        }
-        catch (IOException ex) {
+        } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
 
@@ -3696,11 +3671,9 @@ public abstract class FileUtilities {
             Object ret = in.readObject();
             in.close();
             return (ret);
-        }
-        catch (ClassNotFoundException ex) {
+        } catch (ClassNotFoundException ex) {
             throw new RuntimeException(ex);
-        }
-        catch (IOException ex) {
+        } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
 
@@ -3723,8 +3696,7 @@ public abstract class FileUtilities {
             InputStreamReader in = new InputStreamReader(inp);
             String ret = readInFile(in);
             return (ret);
-        }
-        catch (IOException ex) {
+        } catch (IOException ex) {
             throw new IllegalStateException("Cannot download URL");
         }
 
@@ -3852,8 +3824,7 @@ public abstract class FileUtilities {
                     return (false);
             }
             return (Nread2 == Nread1);
-        }
-        catch (IOException ex) {
+        } catch (IOException ex) {
             throw new IllegalArgumentException("Cnnot read compared files");
         }
 
@@ -3878,8 +3849,7 @@ public abstract class FileUtilities {
         try {
             InputStream in = new FileInputStream(TheFile);
             return (in);
-        }
-        catch (FileNotFoundException ex) {
+        } catch (FileNotFoundException ex) {
             String Fullpath = TheFile.getAbsolutePath();
             throw new IllegalStateException(
                     "Requested File '" + Fullpath + "' does not exist -  but has been tested - HUH???");
@@ -3995,8 +3965,7 @@ public abstract class FileUtilities {
             String ret = FileUtilities.readInFile(inp);
             conn.disconnect();
             return (ret);
-        }
-        catch (Exception ex1) {
+        } catch (Exception ex1) {
             ex1.printStackTrace();
             throw new RuntimeException(ex1);
         }
@@ -4028,8 +3997,7 @@ public abstract class FileUtilities {
             wout.flush();
             wout.close();
             conn.disconnect();
-        }
-        catch (Exception ex1) {
+        } catch (Exception ex1) {
             ex1.printStackTrace();
             throw new RuntimeException(ex1);
         }
@@ -4158,8 +4126,7 @@ public abstract class FileUtilities {
         public HasExtensionFilter(String e) {
             if (!e.startsWith(".")) {
                 extension = "." + e;
-            }
-            else {
+            } else {
                 extension = e;
             }
         }
