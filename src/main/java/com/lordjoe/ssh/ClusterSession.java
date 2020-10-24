@@ -596,11 +596,12 @@ public class ClusterSession {
 
     public static void main(String[] args) {
         fixLogging();
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 12; i++) {
             SSHUserData user = SSHUserData.getRandomUser();
             setUser(user);
             ClusterSession me = new ClusterSession();
             ChannelSftp sftp = me.getSFTP();
+            System.out.println("Connecting for user " + user.userName);
             ClusterSession.releaseClusterSession(me);
         }
 
