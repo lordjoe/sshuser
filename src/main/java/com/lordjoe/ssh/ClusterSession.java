@@ -12,8 +12,7 @@ import org.cactoos.io.DeadInputStream;
 import java.io.*;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
-import java.util.Collection;
-import java.util.Properties;
+import java.util.*;
 
 /**
  * com.lordjoe.ssh.ClusterSession
@@ -422,6 +421,26 @@ public class ClusterSession {
         }
     }
 
+    public List<String> getFilesInDirectory(String directory)
+    {
+        List<String> ret = new ArrayList<>();
+        try {
+            ChannelSftp c = getSFTP();
+            Vector ls = c.ls(directory);
+            for (Object l : ls) {
+                String filename = ((ChannelSftp.LsEntry) l).getFilename();
+                if("..".equals(filename))
+                    continue;
+                if(".".equals(filename))
+                    continue;
+                ret.add(filename );
+            }
+            return ret;
+        } catch (SftpException e) {
+            throw new RuntimeException(e);
+         }
+
+    }
 
     /**
      * @param filename the command to execute
@@ -594,18 +613,56 @@ public class ClusterSession {
 
     }
 
+    public static Properties readClusterProperties() {
+        try {
+            Properties ret = new Properties();
+            ret.load(new FileInputStream("/opt/blastserver/ClusterLaunch.properties"));
+            return ret;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void writeRemoteFiles( File cometFiles,String directory, List<String> filesInDirectory) {
+        try {
+            PrintWriter out = new PrintWriter(new FileWriter(cometFiles));
+            for (String s : filesInDirectory) {
+                out.print(s);
+                out.print("=");
+                out.println(directory + "/" + s);
+            }
+            out.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+
+        }
+
+    }
+
+
+
     public static void main(String[] args) {
-        fixLogging();
-        for (int i = 0; i < 12; i++) {
+        Properties  props = readClusterProperties();
+          fixLogging();
+          for (int i = 0; i < 12; i++) {
             SSHUserData user = SSHUserData.getRandomUser();
             setUser(user);
             ClusterSession me = new ClusterSession();
-            ChannelSftp sftp = me.getSFTP();
+            if(i == 0) {
+                String directory = props.getProperty("LocationOfCometDb");
+                List<String> filesInDirectory = me.getFilesInDirectory(directory);
+                File cometFiles = new File("/opt/blastserver/cometFiles.properties");
+                writeRemoteFiles(cometFiles, directory, filesInDirectory);
+            }
+
+
+              ChannelSftp sftp = me.getSFTP();
             System.out.println("Connecting for user " + user.userName);
             ClusterSession.releaseClusterSession(me);
         }
 
       }
+
 
 
 }
