@@ -23,47 +23,24 @@ public class ClusterSession {
     static java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(ClusterSession.class.getName());
   
 
-    private static SSHUserData user;
-
-    public static SSHUserData getUser() {
-        return user;
-    }
-
-    public static void setUser(SSHUserData u) {
-       user = u;
-    }
 
 
-    private static boolean inUse;
-    private static ClusterSession gSession;
-
-    public synchronized static ClusterSession getClusterSession() {
-        if (gSession == null) {
-            gSession = new ClusterSession();
-
-        }
-        if (inUse)
-            throw new UnsupportedOperationException("Session In Use");
-        inUse = true;
-        return gSession;
-
-    }
-
-    public synchronized static void releaseClusterSession(ClusterSession me) {
-        inUse = false;
-    }
 
     private JSch my_jsch;
-     private Session my_session;
+    private Session my_session;
     private Ssh my_ssh;
     private ChannelSftp cftp;
     private Shell my_shell;
+    private final  SSHUserData user;
 
-    private ClusterSession() {
+    public ClusterSession(SSHUserData user) {
+        this.user = user;
         //   SlurmClusterRunner.logMessage("Constructing Cluster Session");
         System.out.println("Constructing Cluster Session");
     }
-
+    public   SSHUserData getUser() {
+        return user;
+    }
     /**
      * just make SJ4j shut up and go away
      */
@@ -646,8 +623,7 @@ public class ClusterSession {
           fixLogging();
           for (int i = 0; i < 12; i++) {
             SSHUserData user = SSHUserData.getRandomUser();
-            setUser(user);
-            ClusterSession me = new ClusterSession();
+              ClusterSession me = new ClusterSession(user);
             if(i == 0) {
                 String directory = props.getProperty("LocationOfCometDb");
                 List<String> filesInDirectory = me.getFilesInDirectory(directory);
@@ -658,8 +634,7 @@ public class ClusterSession {
 
               ChannelSftp sftp = me.getSFTP();
             System.out.println("Connecting for user " + user.userName);
-            ClusterSession.releaseClusterSession(me);
-        }
+          }
 
       }
 
