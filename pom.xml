@@ -17,18 +17,23 @@
         <!-- https://mvnrepository.com/artifact/org.eclipse.jetty/jetty-util -->
 
 
-        <!-- sxsh user project -->
+        <!--
         <dependency>
             <groupId>com.lordjoe</groupId>
             <artifactId>SSHUser</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
-
+                      sxsh user project -->
         <!-- https://mvnrepository.com/artifact/com.jcabi/jcabi-ssh -->
         <dependency>
             <groupId>com.jcabi</groupId>
             <artifactId>jcabi-ssh</artifactId>
             <version>1.6</version>
+        </dependency>
+        <dependency>
+            <groupId>com.jcraft</groupId>
+            <artifactId>jsch</artifactId>
+            <version>0.1.55</version>
         </dependency>
         <!-- https://mvnrepository.com/artifact/com.jcabi/jcabi-log -->
         <dependency>

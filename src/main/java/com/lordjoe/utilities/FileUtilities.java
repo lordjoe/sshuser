@@ -173,6 +173,12 @@ public abstract class FileUtilities {
 
             System.out.format("Permissions before: %s%n", PosixFilePermissions.toString(perms));
 
+        }catch (UnsupportedOperationException e) {
+            if (System.getProperty("os.name").toLowerCase().contains("win")) {
+                return;
+            }
+            throw e;
+
         } catch (IOException e) {
             throw new RuntimeException(e);
 
@@ -199,7 +205,14 @@ public abstract class FileUtilities {
 
             perms = Files.readAttributes(path, PosixFileAttributes.class).permissions();
             System.out.format("Permissions before: %s%n", PosixFilePermissions.toString(perms));
-        } catch (IOException e) {
+        } catch (UnsupportedOperationException e) {
+            if (System.getProperty("os.name").toLowerCase().contains("win")) {
+               return;
+            }
+            throw e;
+
+        }
+        catch (IOException e) {
             throw new RuntimeException(e);
 
         }
