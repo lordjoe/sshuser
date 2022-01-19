@@ -9,6 +9,8 @@ package com.lordjoe.ssh;
  * com.lordjoe.ssh.AccountsData
  */
 
+import com.lordjoe.utilities.FileUtilities;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -46,6 +48,13 @@ public class SSHUserData {
             return  "";
     }
 
+
+
+    public static boolean isWindows() {
+        String os = System.getProperty("os.name").toLowerCase();
+        return os.contains("win");
+    }
+
     //Return true if the email is known
     public static boolean containsMail(String email){
         guaranteeUsers();
@@ -55,9 +64,13 @@ public class SSHUserData {
             return false;
     }
 
+
     protected static void guaranteeUsers() {
+       String dirX = KEYS_DIRECTORY;
+       if(isWindows())
+           dirX = "C:" + dirX;
         if(accounts.isEmpty())   {
-            File dir = new File(KEYS_DIRECTORY);
+            File dir = new File(dirX);
             File users = new File(dir,USERS_FILE);
             loadUsers(users);
 
@@ -155,11 +168,38 @@ public class SSHUserData {
 
     public File getPrivateKeyFile()
     {
-        File dir = new File(KEYS_DIRECTORY);
+        String workingDir = System.getProperty("user.home");
+        String privKeyAbsPath = workingDir + "/.ssh/";
+        File dir = new File(privKeyAbsPath);
+  //      File dir = new File(KEYS_DIRECTORY);
         File ret = new File(dir,privateKeyFile);
         if(!ret.exists())
             throw new IllegalStateException("Cannot find file private key file " + ret.getAbsolutePath());
         return ret;
+    }
+
+    public File getPubliceKeyFile()
+    {
+        String workingDir = System.getProperty("user.home");
+        String privKeyAbsPath = workingDir + "/.ssh/";
+        File dir = new File(privKeyAbsPath);
+//        File dir = new File(KEYS_DIRECTORY);
+        File ret = new File(dir,publicKeyFile);
+        if(!ret.exists())
+            throw new IllegalStateException("Cannot find file public key file " + ret.getAbsolutePath());
+        return ret;
+    }
+    public String getPassPhrase()
+    {
+        if(passphrase == null)
+            return null;
+        if(true)
+            return passphrase;
+        File dir = new File(KEYS_DIRECTORY);
+        File ret = new File(dir,passphrase);
+        if(!ret.exists())
+            throw new IllegalStateException("Cannot find passphrase file  " + ret.getAbsolutePath());
+        return FileUtilities.readInFile(ret);
     }
 
     protected static void loadUsers(File name)
