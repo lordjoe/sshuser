@@ -15,15 +15,14 @@
     <dependencies>
         <!-- https://mvnrepository.com/artifact/com.jcabi/jcabi-log -->
         <!-- https://mvnrepository.com/artifact/org.eclipse.jetty/jetty-util -->
-
-
-        <!--
+        
+        <!-- https://mvnrepository.com/artifact/javax.mail/mail -->
         <dependency>
-            <groupId>com.lordjoe</groupId>
-            <artifactId>SSHUser</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <groupId>javax.mail</groupId>
+            <artifactId>mail</artifactId>
+            <version>1.4.7</version>
         </dependency>
-                      sxsh user project -->
+
         <!-- https://mvnrepository.com/artifact/com.jcabi/jcabi-ssh -->
         <dependency>
             <groupId>com.jcabi</groupId>
