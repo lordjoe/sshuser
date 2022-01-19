@@ -24,7 +24,7 @@ public class ClusterSession {
   
 
 
-
+    private final int timeout = 100000;
 
     private JSch my_jsch;
     private Session my_session;
@@ -150,7 +150,9 @@ public class ClusterSession {
         try {
             SSHUserData user = getUser();
             String path = user.getPrivateKeyFile().getAbsolutePath();
-            my_jsch.addIdentity(path);
+            String pubpath = user.getPubliceKeyFile().getAbsolutePath();
+            String passPhrase = user.getPassPhrase();
+            my_jsch.addIdentity(path, passPhrase);
 
         } catch (JSchException e) {
             throw new RuntimeException(e);
@@ -201,7 +203,7 @@ public class ClusterSession {
 
             my_session.setUserInfo(lui);
             my_session.setConfig("StrictHostKeyChecking", "no");
-            my_session.setTimeout(2000);
+            my_session.setTimeout(timeout);
             my_session.connect();
             return my_session;
         } catch (JSchException e) {
@@ -256,9 +258,8 @@ public class ClusterSession {
             Properties config = new Properties();
 
 
-            config.setProperty("StrictHostKeyChecking", "no");
-            my_session.setConfig(config);
-
+            my_session.setConfig("StrictHostKeyChecking", "no");
+   
             /**
             ConfigRepository configRepository = jsch.getConfigRepository();
             // /     EasyRepo identityRepository = new EasyRepo(jsch);
@@ -283,12 +284,12 @@ public class ClusterSession {
         try {
             Session session = getSession();
             if (!session.isConnected()) {
-                session.connect();
+                session.connect(timeout);
                 //               SlurmClusterRunner.logMessage("Session Connected");
             }
             Channel channel = session.openChannel("sftp");
             if (!channel.isConnected()) {
-                channel.connect();
+                channel.connect(timeout);
                 //               SlurmClusterRunner.logMessage("Channel Connected");
             }
             cftp = (ChannelSftp) channel;
@@ -492,7 +493,7 @@ public class ClusterSession {
             channel.setInputStream(null);
             InputStream in = channel.getInputStream();
             if (!channel.isConnected()) {
-                channel.connect();
+                channel.connect(timeout);
             }
             ByteArrayOutputStream output = new ByteArrayOutputStream();
             ByteArrayOutputStream error = new ByteArrayOutputStream();
@@ -581,7 +582,7 @@ public class ClusterSession {
     public void sallocAndRun(String command, int nproocessors) {
         try {
             //           SlurmClusterRunner.logMessage("Ready to salloc ");
-            executeCommand("salloc -N" + nproocessors + " srun " + command + " & ");
+            executeCommand("salloc  --time=1:00:00  " + SlurmClusterRunner.getSlurmAdded() + "s-N" + nproocessors + " srun " + command + " & ");
             //           SlurmClusterRunner.logMessage(" salloc running ");
         } catch (IOException e) {
             throw new RuntimeException(e);
