@@ -63,8 +63,7 @@ public class SendMail {
             passwordX = Encrypt.decryptString(pwd);
         }
           if(passwordX != null) {
-  //           authenticator = new SMTPAuthenticator();
-             final String password = passwordX;
+              final String password = passwordX;
                  authenticator = new javax.mail.Authenticator() {
                 protected PasswordAuthentication getPasswordAuthentication() {
                      return new PasswordAuthentication(username, password);

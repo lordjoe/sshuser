@@ -16,11 +16,12 @@
         <!-- https://mvnrepository.com/artifact/com.jcabi/jcabi-log -->
         <!-- https://mvnrepository.com/artifact/org.eclipse.jetty/jetty-util -->
         
-        <!-- https://mvnrepository.com/artifact/javax.mail/mail -->
+
+        <!-- https://mvnrepository.com/artifact/com.sun.mail/javax.mail -->
         <dependency>
-            <groupId>javax.mail</groupId>
-            <artifactId>mail</artifactId>
-            <version>1.4.7</version>
+            <groupId>com.sun.mail</groupId>
+            <artifactId>javax.mail</artifactId>
+            <version>1.6.2</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/com.jcabi/jcabi-ssh -->
